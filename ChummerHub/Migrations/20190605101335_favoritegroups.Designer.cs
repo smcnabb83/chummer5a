@@ -4,14 +4,16 @@ using ChummerHub.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ChummerHub.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20190605101335_favoritegroups")]
+    partial class favoritegroups
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -43,24 +45,6 @@ namespace ChummerHub.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles");
-                });
-
-            modelBuilder.Entity("ChummerHub.Data.ApplicationUserFavoriteGroup", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<Guid?>("ApplicationUserId");
-
-                    b.Property<Guid>("FavoriteGuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId");
-
-                    b.HasIndex("FavoriteGuid");
-
-                    b.ToTable("ApplicationUserFavoriteGroup");
                 });
 
             modelBuilder.Entity("ChummerHub.Models.V1.SINner", b =>
@@ -127,6 +111,8 @@ namespace ChummerHub.Migrations
                     b.Property<Guid?>("Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<Guid?>("ApplicationUserId");
+
                     b.Property<string>("Description");
 
                     b.Property<string>("GroupCreatorUserName");
@@ -149,6 +135,8 @@ namespace ChummerHub.Migrations
                     b.Property<string>("PasswordHash");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("Groupname");
 
@@ -429,13 +417,6 @@ namespace ChummerHub.Migrations
                     b.ToTable("AspNetUserTokens");
                 });
 
-            modelBuilder.Entity("ChummerHub.Data.ApplicationUserFavoriteGroup", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.ApplicationUser")
-                        .WithMany("FavoriteGroups")
-                        .HasForeignKey("ApplicationUserId");
-                });
-
             modelBuilder.Entity("ChummerHub.Models.V1.SINner", b =>
                 {
                     b.HasOne("ChummerHub.Models.V1.SINnerGroup", "MyGroup")
@@ -449,6 +430,10 @@ namespace ChummerHub.Migrations
 
             modelBuilder.Entity("ChummerHub.Models.V1.SINnerGroup", b =>
                 {
+                    b.HasOne("Microsoft.AspNetCore.Identity.ApplicationUser")
+                        .WithMany("FavoriteGroups")
+                        .HasForeignKey("ApplicationUserId");
+
                     b.HasOne("ChummerHub.Models.V1.SINnerGroup", "MyParentGroup")
                         .WithMany("MyGroups")
                         .HasForeignKey("MyParentGroupId");

@@ -362,7 +362,7 @@ namespace Chummer
                             {
                                 foreach(var node in nodelist)
                                 {
-                                    var querycoll = treCharacterList.Nodes.Cast<TreeNode>();
+                                    var querycoll = treCharacterList.Nodes.Cast<TreeNode>().ToList();
                                     var found = (from a in querycoll
                                                 where a.Text == node.Text && a.Tag == node.Tag
                                                 select a).ToList();
@@ -438,12 +438,20 @@ namespace Chummer
                 }
                 else
                 {
-                    objRecentNode.Nodes.Clear();
-                    for(int i = 0; i < lstRecentsNodes.Length; i++)
+                    try
                     {
-                        TreeNode objNode = lstRecentsNodes[i];
-                        if(objNode != null)
-                            objRecentNode.Nodes.Add(objNode);
+                        objRecentNode.Nodes.Clear();
+                        for (int i = 0; i < lstRecentsNodes.Length; i++)
+                        {
+                            TreeNode objNode = lstRecentsNodes[i];
+                            if (objNode != null)
+                                objRecentNode.Nodes.Add(objNode);
+                        }
+                    }
+                    catch (ObjectDisposedException e)
+                    {
+                        //just swallow this
+                        Log.Trace(e, "ObjectDisposedException can be ignored here.");
                     }
                 }
             }

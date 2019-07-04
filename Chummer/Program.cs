@@ -17,18 +17,24 @@
  *  https://github.com/chummer5a/chummer5a
  */
  using System;
+ using System.ComponentModel;
  using System.Diagnostics;
-using System.IO;
+ using System.Globalization;
+ using System.IO;
 using System.Linq;
  using System.Net;
  using System.Net.Sockets;
+ using System.Reflection;
  using System.Runtime;
+ using System.Runtime.InteropServices;
+ using System.Runtime.Remoting.Contexts;
  using System.Threading;
  using System.Windows.Forms;
 ﻿using Chummer.Backend;
  using Microsoft.ApplicationInsights;
  using Microsoft.ApplicationInsights.DataContracts;
  using Microsoft.ApplicationInsights.Extensibility;
+ using Microsoft.ApplicationInsights.Metrics;
  using Microsoft.ApplicationInsights.NLogTarget;
  using NLog;
  using NLog.Config;
@@ -45,7 +51,7 @@ namespace Chummer
         //{
         //    InstrumentationKey = "012fd080-80dc-4c10-97df-4f2cf8c805d5"
         //};
-        private static readonly TelemetryClient TelemetryClient = new TelemetryClient();
+        public static readonly TelemetryClient TelemetryClient = new TelemetryClient();
         
 
         /// <summary>
@@ -160,7 +166,9 @@ namespace Chummer
                         }
                     }
                     Log.Info(strInfo);
-                    //TelemetryConfiguration.Active.DisableTelemetry = System.Diagnostics.Debugger.IsAttached;
+
+                   
+
                     if (GlobalOptions.UseLoggingApplicationInsights)
                     {
 #if DEBUG
@@ -169,23 +177,35 @@ namespace Chummer
 #else
                         TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = false;
 #endif
-                        CustomTelemetryInitializer.Ip = CustomTelemetryInitializer.GetPublicIPAddress();
                         TelemetryConfiguration.Active.TelemetryInitializers.Add(new CustomTelemetryInitializer());
-                        TelemetryConfiguration.Active.TelemetryProcessorChainBuilder.Use((next) =>
-                            new TranslateExceptionTelemetryProcessor(next));
+                        TelemetryConfiguration.Active.TelemetryProcessorChainBuilder.Use((next) => new TranslateExceptionTelemetryProcessor(next));
+                        var replacePath = Environment.UserName;
+                        TelemetryConfiguration.Active.TelemetryProcessorChainBuilder.Use((next) => new DropUserdataTelemetryProcessor(next, replacePath));
                         TelemetryConfiguration.Active.TelemetryProcessorChainBuilder.Build();
                         //for now lets disable live view. We may make another GlobalOption to enable it at a later stage...
                         //var live = new LiveStreamProvider(ApplicationInsightsConfig);
                         //live.Enable();
 
-                        // Log a page view:
-                        pvt = new PageViewTelemetry("Program.Main()")
+                        //Log an Event with AssemblyVersion and CultureInfo
+                        
+                        if (Properties.Settings.Default.UploadClientId == Guid.Empty)
                         {
-                           Name = "Chummer Startup: " +
+                            Properties.Settings.Default.UploadClientId = Guid.NewGuid();
+                            Properties.Settings.Default.Save();
+                        }
+                        MetricIdentifier mi = new MetricIdentifier("Chummer", "Program Start","Version", "Culture");
+                        var metric = TelemetryClient.GetMetric(mi);
+                        metric.TrackValue(1,
+                            Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                            CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+
+                        // Log a page view:
+                        pvt = new PageViewTelemetry("frmChummerMain()")
+                        {
+                            Name = "Chummer Startup: " +
                                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version
                         };
-                        if (Properties.Settings.Default.UploadClientId != Guid.Empty)
-                            pvt.Id = Properties.Settings.Default.UploadClientId.ToString();
+                        pvt.Id = Properties.Settings.Default.UploadClientId.ToString();
                         pvt.Context.Operation.Name = "Operation Program.Main()";
                         pvt.Properties.Add("parameters", Environment.CommandLine);
                         pvt.Timestamp = startTime;
@@ -198,21 +218,30 @@ namespace Chummer
                     }
                     if (Utils.IsUnitTest)
                         TelemetryConfiguration.Active.DisableTelemetry = true;
+
+                    //make sure the Settings are upgraded/preserved after an upgrade
+                    //see for details: https://stackoverflow.com/questions/534261/how-do-you-keep-user-config-settings-across-different-assembly-versions-in-net/534335#534335
+                    if (Properties.Settings.Default.UpgradeRequired)
+                    {
+                        if (UnblockPath(AppDomain.CurrentDomain.BaseDirectory))
+                        {
+                            Properties.Settings.Default.Upgrade();
+                            Properties.Settings.Default.UpgradeRequired = false;
+                            Properties.Settings.Default.Save();
+                        }
+                        else
+                        {
+                            Log.Warn("Files could not be unblocked in " + AppDomain.CurrentDomain.BaseDirectory);
+                        }
+                    }
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
+                    Log.Error(e);
                 }
 
-                //make sure the Settings are upgraded/preserved after an upgrade
-                //see for details: https://stackoverflow.com/questions/534261/how-do-you-keep-user-config-settings-across-different-assembly-versions-in-net/534335#534335
-                if (Properties.Settings.Default.UpgradeRequired)
-                {
-                    Properties.Settings.Default.Upgrade();
-                    Properties.Settings.Default.UpgradeRequired = false;
-                    Properties.Settings.Default.Save();
-                }
-
+               
                 // Make sure the default language has been loaded before attempting to open the Main Form.
                 LanguageManager.TranslateWinForm(GlobalOptions.Language, null);
 
@@ -239,7 +268,52 @@ namespace Chummer
             }
         }
 
-        
+        [DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool DeleteFile(string name);
+
+        public static bool UnblockPath(string path)
+        {
+            bool allUnblocked = true;
+            string[] files = System.IO.Directory.GetFiles(path);
+            string[] dirs = System.IO.Directory.GetDirectories(path);
+
+            foreach (string file in files)
+            {
+                if (!UnblockFile(file))
+                {
+                    // Get the last error and display it.
+                    int error = Marshal.GetLastWin32Error();
+                    Win32Exception exception = new Win32Exception(error, "Error while unblocking " + file + ".");
+                    switch (exception.NativeErrorCode)
+                    {
+                        case 2://file not found - that means the alternate data-stream is not present.
+                            break;
+                        case 5: Log.Warn(exception);
+                            allUnblocked = false;
+                            break;
+                        default: Log.Error(exception);
+                            allUnblocked = false;
+                            break;
+                    }
+                }
+            }
+
+            foreach (string dir in dirs)
+            {
+                if (!UnblockPath(dir))
+                    allUnblocked = false;
+            }
+
+            return allUnblocked;
+
+        }
+
+        public static bool UnblockFile(string fileName)
+        {
+            return DeleteFile(fileName + ":Zone.Identifier");
+        }
+
 
         /// <summary>
         /// Main application form.

@@ -1,4 +1,16 @@
-Future Build 206
+Future Build 207-208
+
+Application Fixes:
+
+- Fixed issues with the SelectSpell improvement not being properly available in the improvements window.
+- Fixed a regression in the behaviour of the cyberadeptdaemon improvement that prevented Resonance being awarded for fractional losses of Essence. In effect, this improvement was only being counted if you had an integer value of CyberwareEssence. Your Resonance will be adjusted on next Submersion, or if you activate the Reapply Improvements menu option. 
+
+Data Changes:
+
+- Fixed incorrect specialmodificationlimit property for the Special Modifications and Prototype Materials qualities. 
+- Quick Healer now grants a +2 dicepool to casting the Heal spell. I strongly disagree with the wording on this personally, but it's RAW.
+
+Build 206
 
 New Features:
 
@@ -9,6 +21,9 @@ New Features:
 - Gameplay Options can now be used as a forbidden/required choice for items; currently this is used for the Free Insect Spirit qualities, which require the Prime Runner gameplay choice. 
 - Cyberware now supports the use of math operators in the ess and cost values. This allows for customdata files to easily make bulk changes to cyberware Essence and Cost entries.
 - Reimplemented the addsprite and addspirit improvement types to support adding Watchers, Homonculi and other spirit types that are added separately to a tradition.
+- Created new Improvement Types to support the Networker and Massive Network qualities from No Future.
+  - The ContactKarma improvement type changes the cost for all contacts by the listed amount.
+  - The ContactKarmaMinimum improvement type changes the minimum cost for contacts. The minimum is assumed to be 2.
 
 Application Fixes:
 
@@ -32,6 +47,7 @@ Application Fixes:
 - Added logic to prevent accepting a custom drug that does not have a Foundation or a Name without adding the drug successfully.
 - Fixed behaviour of deletion of custom drug recipes in create mode.
 - Unified behaviour of Essence improvements between cyberware and bioware.
+- If no spirit limit is specified for the limitspiritcategory improvement, the improvement will now prompt for all known spirit types.
 
 Application Changes:
 
@@ -41,6 +57,7 @@ Application Changes:
 - Refactored the creation, saving and loading of GUIDs for the Internal ID and Source ID of all objects to provide more consistency. There is a small risk that this will impact the stored improvements of some characters. I haven't been able to prove that it will happen, but logically it should based on this change. 
 - Removed the caching of Mugshot images in the character roster. Prevents high memory usage for large watch folder content.
 - Unified some uses of Availability processing into the AvailabilityValue object.
+- Crash reporter now prevents uploading issues unless the user story in the Error Description tab has been changed.
 
 UI Changes:
 
@@ -68,6 +85,8 @@ Data Changes:
 - Added customdata to allow the helmets for the SWAT Armor, Milspec Armor, Security Armor and Daedelus Jumpsuit. This also assigns the SWAT Armor, Milspec Armor and Security Armor as Full Body Armor, providing access to the FBA mods. 
 - Removed incorrect Medium lifestyle setting from the Workshop/Facility lifestyle qualities. Closes #3660
 - Extended Clip now allows Belt and Drum weapons instead of just Clips.
+- Fixed missing Mastery Quality flag for the Close Combat Mage quality.
+- The Tactical Grpple Gun is now addable as a gear item, in the same manner as the standard grapple gun. 
 
 String Changes:
 

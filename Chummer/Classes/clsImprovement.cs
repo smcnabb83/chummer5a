@@ -312,6 +312,8 @@ namespace Chummer
             ActionDicePool,
             SpecialModificationLimit,
             AddSpirit,
+            ContactKarmaDiscount,
+            ContactKarmaMinimum,
             NumImprovementTypes // 🡐 This one should always be the last defined enum
         }
 
@@ -4123,7 +4125,7 @@ namespace Chummer
             if (s_DictionaryTransactions.TryGetValue(objCharacter, out List<TransactingImprovement> lstTransaction))
             {
                 // Remove all of the Improvements that were added.
-                foreach (TransactingImprovement objTransactingImprovement in lstTransaction)
+                foreach (TransactingImprovement objTransactingImprovement in lstTransaction.ToList())
                 {
                     RemoveImprovements(objCharacter, objTransactingImprovement.ImprovementObject.ImproveSource, objTransactingImprovement.ImprovementObject.SourceName);
                     ClearCachedValue(objCharacter, objTransactingImprovement.ImprovementObject.ImproveType, objTransactingImprovement.ImprovementObject.ImprovedName);

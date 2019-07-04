@@ -34,7 +34,7 @@ namespace Chummer.Backend.Attributes
     /// Character CharacterAttribute.
     /// If using databinding, you should generally be using AttributeSection.{ATT}Binding
     /// </summary>
-    [HubClassTag("Abbrev", true, "TotalValue", null)]
+    [HubClassTag("Abbrev", true, "TotalValue", "TotalValue")]
     [DebuggerDisplay("{" + nameof(_strAbbrev) + "}")]
     public class CharacterAttrib : INotifyMultiplePropertyChanged
     {
@@ -554,6 +554,7 @@ namespace Chummer.Backend.Attributes
         /// <summary>
         /// The CharacterAttribute's total value (Value + Modifiers).
         /// </summary>
+        [HubTag("TotalValue")]
         public int TotalValue
         {
             get
@@ -762,18 +763,13 @@ namespace Chummer.Backend.Attributes
                 else if (lstUniqueName.Contains("precedence1"))
                 {
                     // Retrieve all of the items that are precedence1 and nothing else.
-                    int intHighest = int.MinValue;
                     StringBuilder strNewModifier = new StringBuilder();
-                    foreach (Tuple<string, int, string> strValues in lstUniquePair)
+                    foreach (Tuple<string, int, string> strValues in lstUniquePair.Where(s => s.Item1 == "precedence1" || s.Item1 == "precedence-1"))
                     {
-                        if (strValues.Item1 == "precedence1" || strValues.Item1 == "precedence-1")
-                        {
-                            strNewModifier.Append(strSpaceCharacter + '+' + strSpaceCharacter + strValues.Item3 + strSpaceCharacter + '(' + strValues.Item2.ToString(GlobalOptions.CultureInfo) + ')');
-                            intHighest += strValues.Item2;
-                        }
+                        strNewModifier.Append(
+                            $"{strSpaceCharacter}+{strSpaceCharacter}{strValues.Item3}{strSpaceCharacter}({strValues.Item2.ToString(GlobalOptions.CultureInfo)})");
                     }
-                    if (intHighest >= intBaseValue)
-                        strModifier = strNewModifier;
+                    strModifier = strNewModifier;
                 }
                 else
                 {

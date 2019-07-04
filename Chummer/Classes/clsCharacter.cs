@@ -7631,6 +7631,12 @@ if (!Utils.IsUnitTest){
         public CharacterAttrib MAG => AttributeSection.GetAttributeByName("MAG");
 
         /// <summary>
+        /// Reflection of MAG (hide it, if it is not enabled!)
+        /// </summary>
+        [HubTag("Magic")]
+        public CharacterAttrib ReflectionMAG => MAGEnabled ? MAG : null;
+
+        /// <summary>
         /// Magic (MAG) CharacterAttribute for Adept powers of Mystic Adepts when the appropriate house rule is enabled.
         /// </summary>
         public CharacterAttrib MAGAdept
@@ -7645,14 +7651,32 @@ if (!Utils.IsUnitTest){
         }
 
         /// <summary>
+        /// Reflection of MAGAdept (hide it, if it is not enabled!)
+        /// </summary>
+        [HubTag("MagicAdept")]
+        public CharacterAttrib ReflectionMAGAdept => MAGEnabled ? MAGAdept : null;
+
+        /// <summary>
         /// Resonance (RES) CharacterAttribute.
         /// </summary>
         public CharacterAttrib RES => AttributeSection.GetAttributeByName("RES");
 
         /// <summary>
+        /// Reflection of RES (hide it, if it is not enabled!)
+        /// </summary>
+        [HubTag("Resonance")]
+        public CharacterAttrib ReflectionRES => RESEnabled ? RES : null;
+
+        /// <summary>
         /// Depth (DEP) Attribute.
         /// </summary>
         public CharacterAttrib DEP => AttributeSection.GetAttributeByName("DEP");
+
+        /// <summary>
+        /// Reflection of DEP (hide it, if it is not enabled!)
+        /// </summary>
+        [HubTag("Depth")]
+        public CharacterAttrib ReflectionDEP => DEPEnabled ? DEP : null;
 
         /// <summary>
         /// Essence (ESS) Attribute.
@@ -8387,6 +8411,12 @@ if (!Utils.IsUnitTest){
         }
 
         public string DisplayEssence => Essence().ToString(_objOptions.EssenceFormat, GlobalOptions.CultureInfo);
+
+        /// <summary>
+        /// This is only here for Reflection
+        /// </summary>
+        [HubTag("Essence")]
+        public decimal EssenceDecimal => Essence();
 
         public string DisplayCyberwareEssence =>
             CyberwareEssence.ToString(_objOptions.EssenceFormat, GlobalOptions.CultureInfo);
@@ -10872,6 +10902,7 @@ if (!Utils.IsUnitTest){
         /// <summary>
         /// The Character's total Armor Rating.
         /// </summary>
+        [HubTag]
         public int TotalArmorRating =>
             ArmorRating + ImprovementManager.ValueOf(this, Improvement.ImprovementType.Armor);
 

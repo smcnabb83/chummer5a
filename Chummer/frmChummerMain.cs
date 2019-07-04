@@ -88,6 +88,7 @@ namespace Chummer
         {
             Utils.IsUnitTest = isUnitTest;
             InitializeComponent();
+            _pluginLoader = new PluginControl();
             using (var op_frmChummerMain = Timekeeper.StartSyncron("frmChummerMain Constructor", null, CustomActivity.OperationType.DependencyOperation, _strCurrentVersion))
             {
                 try
@@ -131,12 +132,31 @@ namespace Chummer
                         this.DoThreadSafe(() => { PopulateMRUToolstripMenu(sender, e); });
                     };
 
-                    // Delete the old executable if it exists (created by the update process).
-                    foreach (string strLoopOldFilePath in Directory.GetFiles(Utils.GetStartupPath, "*.old",
-                        SearchOption.AllDirectories))
+                    try
                     {
-                        if (File.Exists(strLoopOldFilePath))
-                            File.Delete(strLoopOldFilePath);
+                        // Delete the old executable if it exists (created by the update process).
+                        string[] oldfiles =
+                            Directory.GetFiles(Utils.GetStartupPath, "*.old", SearchOption.AllDirectories);
+                        foreach (string strLoopOldFilePath in oldfiles)
+                        {
+                            try
+                            {
+                                if (File.Exists(strLoopOldFilePath))
+                                    File.Delete(strLoopOldFilePath);
+                            }
+                            catch (UnauthorizedAccessException e)
+                            {
+                                //we will just delete it the next time
+                                //its probably the "used by another process"
+                                Log.Trace(e,
+                                    "UnauthorizedAccessException can be ignored - probably used by another process.");
+                            }
+                        }
+                    }
+                    catch (UnauthorizedAccessException e)
+                    {
+                        Log.Trace(e,
+                            "UnauthorizedAccessException in " + Utils.GetStartupPath + "can be ignored - probably a weird path like Recycle.Bin or something...");
                     }
 
                     // Populate the MRU list.
@@ -226,27 +246,44 @@ namespace Chummer
                     object blnShowTestLock = new object();
                     if (!Utils.IsUnitTest)
                     {
-                        Parallel.For(1, strArgs.Length, i =>
+                        try
                         {
-                            if (strArgs[i] == "/test")
+                            Parallel.For(1, strArgs.Length, i =>
                             {
-                                lock (blnShowTestLock)
-                                    blnShowTest = true;
-                            }
-                            else if (!strArgs[i].StartsWith('/'))
-                            {
-                                if (!File.Exists(strArgs[i]))
+                                if (strArgs[i] == "/test")
                                 {
-                                    throw new ArgumentException(
-                                        "Chummer started with unknown command line arguments: " +
-                                        strArgs.Aggregate((j, k) => j + " " + k));
+                                    lock (blnShowTestLock)
+                                        blnShowTest = true;
                                 }
+                                else if (!strArgs[i].StartsWith('/'))
+                                {
+                                    if (!File.Exists(strArgs[i]))
+                                    {
+                                        throw new ArgumentException(
+                                            "Chummer started with unknown command line arguments: " +
+                                            strArgs.Aggregate((j, k) => j + " " + k));
+                                    }
 
-                                if (lstCharactersToLoad.Any(x => x.FileName == strArgs[i])) return;
-                                Character objLoopCharacter = LoadCharacter(strArgs[i]).Result;
-                                lstCharactersToLoad.Add(objLoopCharacter);
-                            }
-                        });
+                                    if (lstCharactersToLoad.Any(x => x.FileName == strArgs[i])) return;
+                                    Character objLoopCharacter = LoadCharacter(strArgs[i]).Result;
+                                    lstCharactersToLoad.Add(objLoopCharacter);
+                                }
+                            });
+                        }
+                        catch (Exception e)
+                        {
+                            if (op_frmChummerMain.MyDependencyTelemetry != null)
+                                op_frmChummerMain.MyDependencyTelemetry.Success = false;
+                            if (op_frmChummerMain.MyRequestTelemetry != null)
+                                op_frmChummerMain.MyRequestTelemetry.Success = false;
+                            ExceptionTelemetry ex = new ExceptionTelemetry(e)
+                            {
+                                SeverityLevel = SeverityLevel.Warning
+                            };
+                            op_frmChummerMain.tc.TrackException(ex);
+                            Log.Warn(e);
+                        }
+                        
                     }
 
                     frmLoadingForm.PerformStep(LanguageManager.GetString("String_UI"));
@@ -265,7 +302,6 @@ namespace Chummer
 
                     PluginLoader.CallPlugins(toolsMenu, op_frmChummerMain);
                     frmLoadingForm.Close();
-
                 }
                 catch (Exception e)
                 {
@@ -949,6 +985,18 @@ namespace Chummer
 
         private void frmChummerMain_Load(object sender, EventArgs e)
         {
+            //sometimes the Configuration gets messed up - make sure it is valid!
+            try
+            {
+                Size si = Properties.Settings.Default.Size;
+            }
+            catch (System.Configuration.ConfigurationErrorsException ex)
+            {
+                //the config is invalid - reset it!
+                Properties.Settings.Default.Reset();
+                Properties.Settings.Default.Save();
+                Log.Warn("Configuartion Settings were invalid and had to be reset. Exception: " + ex.Message);
+            }
             if(Properties.Settings.Default.Size.Width == 0 || Properties.Settings.Default.Size.Height == 0 || !IsVisibleOnAnyScreen())
             {
                 Size = new Size(1280, 720);

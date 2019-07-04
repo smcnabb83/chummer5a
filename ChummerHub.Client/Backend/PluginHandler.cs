@@ -70,11 +70,12 @@ namespace Chummer.Plugins
 
         public ITelemetry SetTelemetryInitialize(ITelemetry telemetry)
         {
-            if (!String.IsNullOrEmpty(ChummerHub.Client.Properties.Settings.Default.UserEmail))
-            {
-                if (telemetry?.Context?.User != null)
-                    telemetry.Context.User.AccountId = ChummerHub.Client.Properties.Settings.Default.UserEmail;
-            }
+            //We should maybe add an option in the plugin-option dialog to give the user the opportunity to enable this again.
+            //if (!String.IsNullOrEmpty(ChummerHub.Client.Properties.Settings.Default.UserEmail))
+            //{
+            //    if (telemetry?.Context?.User != null)
+            //        telemetry.Context.User.AccountId = ChummerHub.Client.Properties.Settings.Default.UserEmail;
+            //}
             return telemetry;
         }
 
@@ -131,7 +132,7 @@ namespace Chummer.Plugins
             if (ce?.MySINnerFile?.SiNnerMetaData?.Tags != null)
             {
                 var reflectionseq =
-                    (from a in ce.MySINnerFile.SiNnerMetaData.Tags where a.TagName == "Reflection" select a);
+                    (from a in ce.MySINnerFile.SiNnerMetaData.Tags where a != null && a.TagName == "Reflection" select a);
                 if (reflectionseq?.Any() == true)
                 {
                     refTag = reflectionseq.FirstOrDefault();
@@ -389,9 +390,17 @@ namespace Chummer.Plugins
                 {
                     Func<Task<HttpOperationResponse<ResultAccountGetSinnersByAuthorization>>> myMethodName = async () =>
                     {
-                        var client = StaticUtils.GetClient();
-                        var ret = await client.GetSINnersByAuthorizationWithHttpMessagesAsync();
-                        return ret;
+                        try
+                        {
+                            var client = StaticUtils.GetClient();
+                            var ret = await client.GetSINnersByAuthorizationWithHttpMessagesAsync();
+                            return ret;
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Error(e);
+                            throw;
+                        }
                     }; 
                     var res = await ChummerHub.Client.Backend.Utils.GetCharacterRosterTreeNode(forceUpdate, myMethodName);
                     if (res == null)

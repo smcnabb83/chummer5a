@@ -5640,14 +5640,12 @@ namespace Chummer.Classes
                     foreach (XmlNode xmlSpirit in xmlSpirits)
                     {
                         string strSpiritName = xmlSpirit["name"]?.InnerText;
-                        if (setAllowed.Any(l => strSpiritName == l))
-                        {
-                            lstSpirits.Add(new ListItem(strSpiritName,
-                                xmlSpirit["translate"]?.InnerText ?? strSpiritName));
-                        }
+                        if (!setAllowed.Any(l => strSpiritName == l) && setAllowed.Count != 0) continue;
+                        lstSpirits.Add(new ListItem(strSpiritName,
+                            xmlSpirit["translate"]?.InnerText ?? strSpiritName));
                     }
 
-            frmSelectItem frmSelect = new frmSelectItem { GeneralItems = lstSpirits };
+			frmSelectItem frmSelect = new frmSelectItem { GeneralItems = lstSpirits };
             frmSelect.ShowDialog();
             if (frmSelect.DialogResult == DialogResult.Cancel)
             {
@@ -6264,9 +6262,12 @@ namespace Chummer.Classes
 
         public void cyberadeptdaemon(XmlNode bonusNode)
         {
-            //TODO: I'm not happy with this. 
+            //TODO: I'm not happy with this.
+            //KC 90: a Cyberadept who has Submerged may restore Resonance that has been lost to cyberware (and only cyberware) by an amount equal to half their Submersion Grade(rounded up).
+            //To handle this, we ceiling the CyberwareEssence value up, as a non-zero loss of Essence removes a point of Resonance and cut the submersion grade in half.
+            //Whichever value is lower becomes the value of the improvement. 
             Log.Info("cyberadeptdaemon");
-            int final = (int) Math.Min((decimal) Math.Ceiling(0.5 * _objCharacter.SubmersionGrade), _objCharacter.CyberwareEssence);
+            int final = (int) Math.Min((decimal) Math.Ceiling(0.5 * _objCharacter.SubmersionGrade), Math.Ceiling(_objCharacter.CyberwareEssence));
             CreateImprovement("RESBase", _objImprovementSource, SourceName, Improvement.ImprovementType.Attribute, _strUnique, final, 1, 0, 0, final);
         }
 
@@ -6280,6 +6281,20 @@ namespace Chummer.Classes
             Log.Info("actiondicepool");
             CreateImprovement(bonusNode["name"]?.InnerText, _objImprovementSource, SourceName, Improvement.ImprovementType.ActionDicePool,
                 _strUnique, ImprovementManager.ValueToInt(_objCharacter, bonusNode["val"]?.InnerText, _intRating));
+        }
+
+        public void contactkarma(XmlNode bonusNode)
+        {
+            Log.Info("contactkarma");
+            CreateImprovement(string.Empty, _objImprovementSource, SourceName, Improvement.ImprovementType.ContactKarmaDiscount, _strUnique,
+                ImprovementManager.ValueToInt(_objCharacter, bonusNode.InnerText, _intRating));
+        }
+
+        public void contactkarmaminimum(XmlNode bonusNode)
+        {
+            Log.Info("contactkarmaminimum");
+            CreateImprovement(string.Empty, _objImprovementSource, SourceName, Improvement.ImprovementType.ContactKarmaMinimum, _strUnique,
+                ImprovementManager.ValueToInt(_objCharacter, bonusNode.InnerText, _intRating));
         }
         #endregion
     }

@@ -160,14 +160,14 @@ namespace Chummer
             //}
             if (ModifierKeys == Keys.Control)
             {
-                if (!objTree.SelectedNode.IsExpanded)
+                if (objTree?.SelectedNode?.IsExpanded == false)
                 {
                     foreach (TreeNode objNode in objTree.SelectedNode.Nodes)
                     {
                         objNode.ExpandAll();
                     }
                 }
-                else
+                else if (objTree?.SelectedNode?.Nodes != null)
                 {
                     foreach (TreeNode objNode in objTree.SelectedNode.Nodes)
                     {
@@ -1407,7 +1407,9 @@ namespace Chummer
                         if (CharacterObject.ExCon)
                         {
                             bool blnDoRefresh = false;
-                            foreach (Cyberware objCyberware in CharacterObject.Cyberware.ToList().DeepWhere(x => x.Children, x => x.CanRemoveThroughImprovements))
+                            var list = CharacterObject.Cyberware.ToList()
+                                .DeepWhere(x => x.Children, x => x.CanRemoveThroughImprovements);
+                            foreach (Cyberware objCyberware in list)
                             {
                                 char chrAvail = objCyberware.TotalAvailTuple(false).Suffix;
                                 if (chrAvail == 'R' || chrAvail == 'F')
@@ -7334,7 +7336,17 @@ namespace Chummer
                     if (blnAddItem)
                     {
                         blnRequireUpdate = true;
-                        CharacterObject.Qualities.Add(objQuality);
+                        //to avoid an System.InvalidOperationException: Cannot change ObservableCollection during a CollectionChanged event.
+                        var tempthread = new System.Threading.Thread(() =>
+                        {
+                            System.Threading.Thread.CurrentThread.IsBackground = false;
+                            System.Threading.Thread.CurrentThread.Priority = System.Threading.ThreadPriority.BelowNormal;
+                            this.DoThreadSafe(() =>
+                            {
+                                CharacterObject.Qualities.Add(objQuality);
+                            });
+                        });
+                        tempthread.Start();
 
                         // Add any created Weapons to the character.
                         foreach (Weapon objWeapon in lstWeapons)
@@ -7824,6 +7836,9 @@ namespace Chummer
         private void nudGearRating_ValueChanged(object sender, EventArgs e)
         {
             if (IsRefreshing)
+                return;
+
+            if (treGear?.SelectedNode == null)
                 return;
 
             if (treGear.SelectedNode.Level > 0)
@@ -9754,7 +9769,9 @@ namespace Chummer
                 if (spellCost <= CharacterObjectOptions.KarmaSpell)
                 {
                     // Assume that every [spell cost] karma spent on a Mastery quality is paid for with a priority-given spell point instead, as that is the most karma-efficient.
-                    int intQualityKarmaToSpellPoints = Math.Min(limit, (CharacterObject.Qualities.Where(objQuality => objQuality.CanBuyWithSpellPoints).Sum(objQuality => objQuality.BP) * CharacterObjectOptions.KarmaQuality) / CharacterObjectOptions.KarmaSpell);
+                    int intQualityKarmaToSpellPoints = CharacterObjectOptions.KarmaSpell;
+                    if (CharacterObjectOptions.KarmaSpell != 0)
+                            intQualityKarmaToSpellPoints = Math.Min(limit, (CharacterObject.Qualities.Where(objQuality => objQuality.CanBuyWithSpellPoints).Sum(objQuality => objQuality.BP) * CharacterObjectOptions.KarmaQuality) / CharacterObjectOptions.KarmaSpell);
                     spells += intQualityKarmaToSpellPoints;
                     // Add the karma paid for by spell points back into the available karma pool.
                     intKarmaPointsRemain += intQualityKarmaToSpellPoints * CharacterObjectOptions.KarmaSpell;

@@ -33,7 +33,7 @@ using System.Drawing;
 namespace Chummer.Backend.Skills
 {
     [DebuggerDisplay("{_strName} {_intBase} {_intKarma} {Rating}")]
-    [HubClassTag("SkillId", true, "Name", "Rating;Pool;Specialization")]
+    [HubClassTag("SkillId", true, "Name", "Rating;Specialization")]
     public partial class Skill : INotifyMultiplePropertyChanged, IHasName, IHasXmlNode, IHasNotes
     {
         private CharacterAttrib _objAttribute;
@@ -67,6 +67,7 @@ namespace Chummer.Backend.Skills
             objWriter.WriteElementString("karma", _intKarma.ToString(GlobalOptions.InvariantCultureInfo));
             objWriter.WriteElementString("base", _intBase.ToString(GlobalOptions.InvariantCultureInfo)); //this could acctually be saved in karma too during career
             objWriter.WriteElementString("notes", _strNotes);
+            objWriter.WriteElementString("name", _strName);
             if (!CharacterObject.Created)
             {
                 objWriter.WriteElementString("buywithkarma", BuyWithKarma.ToString());
