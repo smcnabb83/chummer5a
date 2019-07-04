@@ -43,7 +43,7 @@ namespace Chummer.UI.Skills
             this.nudKarma = new Chummer.NumericUpDownEx();
             this.nudSkill = new Chummer.NumericUpDownEx();
             this.lblModifiedRating = new Chummer.LabelWithToolTip();
-            this.cboSpec = new ElasticComboBox();
+            this.cboSpec = new Chummer.ElasticComboBox();
             this.chkKarma = new System.Windows.Forms.CheckBox();
             this.cmdDelete = new System.Windows.Forms.Button();
             this.lblCareerRating = new System.Windows.Forms.Label();
@@ -51,7 +51,7 @@ namespace Chummer.UI.Skills
             this.lblCareerSpec = new System.Windows.Forms.Label();
             this.btnAddSpec = new Chummer.ButtonWithToolTip();
             this.btnAttribute = new System.Windows.Forms.Button();
-            this.cboSelectAttribute = new ElasticComboBox();
+            this.cboSelectAttribute = new Chummer.ElasticComboBox();
             this.cmsSkillLabel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudKarma)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudSkill)).BeginInit();
@@ -135,11 +135,12 @@ namespace Chummer.UI.Skills
             this.cboSpec.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.cboSpec.FormattingEnabled = true;
-            this.cboSpec.Location = new System.Drawing.Point(310, 1);
+            this.cboSpec.Location = new System.Drawing.Point(424, 1);
             this.cboSpec.Name = "cboSpec";
-            this.cboSpec.Size = new System.Drawing.Size(402, 21);
+            this.cboSpec.Size = new System.Drawing.Size(288, 21);
             this.cboSpec.Sorted = true;
             this.cboSpec.TabIndex = 17;
+            this.cboSpec.TooltipText = "";
             // 
             // chkKarma
             // 
@@ -185,7 +186,7 @@ namespace Chummer.UI.Skills
             // lblCareerSpec
             // 
             this.lblCareerSpec.AutoSize = true;
-            this.lblCareerSpec.Location = new System.Drawing.Point(290, 5);
+            this.lblCareerSpec.Location = new System.Drawing.Point(383, 6);
             this.lblCareerSpec.Name = "lblCareerSpec";
             this.lblCareerSpec.Size = new System.Drawing.Size(35, 13);
             this.lblCareerSpec.TabIndex = 22;
@@ -224,6 +225,7 @@ namespace Chummer.UI.Skills
             this.cboSelectAttribute.Name = "cboSelectAttribute";
             this.cboSelectAttribute.Size = new System.Drawing.Size(39, 21);
             this.cboSelectAttribute.TabIndex = 25;
+            this.cboSelectAttribute.TooltipText = "";
             this.cboSelectAttribute.DropDownClosed += new System.EventHandler(this.cboSelectAttribute_Closed);
             // 
             // SkillControl2
@@ -247,11 +249,11 @@ namespace Chummer.UI.Skills
             this.Margin = new System.Windows.Forms.Padding(0);
             this.Name = "SkillControl2";
             this.Size = new System.Drawing.Size(789, 24);
+            this.MouseLeave += new System.EventHandler(this.OnMouseLeave);
+            this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.OnMouseMove);
             this.cmsSkillLabel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.nudKarma)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudSkill)).EndInit();
-            this.MouseLeave += new System.EventHandler(this.OnMouseLeave);
-            this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.OnMouseMove);
             this.ResumeLayout(false);
             this.PerformLayout();
 
